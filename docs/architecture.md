@@ -34,6 +34,8 @@ Three kinds of process at runtime:
 
 The first channel to start spawns the hub via `bun run src/hub-daemon.ts` with `detached: true` and unreffed, so the hub outlives the spawning session. All subsequent channels find the socket and connect as clients.
 
+Claude Code sends no shutdown signal, and the MCP stdio transport ignores stdin EOF, so a channel would otherwise outlive its session forever. `channel/parent-watch.ts` exits the process on stdin EOF, with a parent-pid liveness poll as a backstop. When the last channel disconnects, the hub's idle timer takes the daemon down too.
+
 ## Layers
 
 ### Protocol (`src/protocol.ts`)
@@ -68,6 +70,7 @@ Line-delimited JSON over the Unix socket. `readLines(socket, onLine)` buffers by
 | `notifications.ts` | Builds the `{content, meta}` payload for `notifications/claude/channel` |
 | `mcp-server.ts` | Creates the MCP Server with `experimental.claude/channel` capability, wires `ListTools` and `CallTool` |
 | `pending-broadcasts.ts` | Channel-side table of in-flight `relay_broadcast` calls with timeouts for the broadcast-ack round-trip |
+| `parent-watch.ts` | Exits the channel when the parent Claude Code process goes away (stdin EOF, plus a parent-pid liveness poll) |
 | `index.ts` | `startChannel` orchestration |
 
 ### Identity (`src/identity.ts`)
