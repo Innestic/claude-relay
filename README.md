@@ -97,6 +97,13 @@ DATA=~/.claude/plugins/data/relay-claude-relay
 tail -f "$DATA/logs/relay-$(date +%Y-%m-%d).log" | jq   # today's log
 pgrep -f hub-daemon.ts                                  # hub alive?
 pkill -f hub-daemon.ts && rm -f "$DATA/hub.sock"        # force reset
+ps -Ao pid,ppid,args | grep 'relay/src/main.ts' | awk '$2==1'   # orphaned channels (should be none)
+```
+
+Versions before 0.1.5 leaked one channel process per session exit. If you ran an older version, clear the orphans once:
+
+```bash
+pkill -f 'relay/src/main.ts'; pkill -f 'relay/src/hub-daemon.ts'
 ```
 
 Per-session MCP stderr lives under `~/Library/Caches/claude-cli-nodejs/<project-slug>/mcp-logs-*/`. Start there when a channel fails to register.
